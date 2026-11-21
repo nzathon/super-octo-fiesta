@@ -50,6 +50,16 @@ jobs:
         with:
           tool: cargo-ndk
 
+      - name: Periksa API azalea (info untuk diagnosa)
+        continue-on-error: true
+        run: |
+          cd rust
+          cargo fetch 2>&1 | tail -2
+          d=$(ls -d ~/.cargo/git/checkouts/azalea-*/*/ | head -1)
+          echo "== JoinOpts =="; grep -rn "custom_resolved_address\|pub struct JoinOpts" "$d" --include=*.rs | head -10
+          echo "== RESOLVER =="; grep -rn "RESOLVER" "$d" --include=*.rs | head -10
+          echo "== start_with_opts =="; grep -rn "fn start_with_opts" "$d" --include=*.rs | head -10
+
       - name: Bangun inti Azalea (Rust)
         run: |
           cd rust
