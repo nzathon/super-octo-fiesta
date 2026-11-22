@@ -6,6 +6,7 @@ on:
       - 'rust/**'
       - 'app/src/main/assets/**'
       - 'web/**'
+      - '*.zip'
       - '.github/workflows/build-core.yml'
   workflow_dispatch:
 
@@ -14,6 +15,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Bongkar zip proyek
+        run: |
+          z=$(ls -t *.zip 2>/dev/null | head -1 || true)
+          if [ -n "$z" ]; then
+            echo "Membongkar $z"
+            rm -rf _x && mkdir _x
+            unzip -oq "$z" -d _x
+            if [ "$(ls -A _x | wc -l)" = "1" ] && [ -d "_x/$(ls _x)" ]; then
+              cp -r "_x/$(ls _x)"/. .
+            else
+              cp -r _x/. .
+            fi
+            rm -rf _x
+          else
+            echo "Tidak ada zip, memakai file di repo apa adanya"
+          fi
+          test -f rust/Cargo.toml || { echo "rust/Cargo.toml tidak ditemukan"; ls -la; exit 1; }
       - uses: dtolnay/rust-toolchain@nightly
         with:
           targets: aarch64-linux-android
@@ -29,6 +47,7 @@ jobs:
           cargo ndk -t arm64-v8a -P 26 build --release
       - name: Kemas bundel core-pack
         run: |
+          rm -rf core-pack
           mkdir -p core-pack/web
           cp rust/target/aarch64-linux-android/release/azalea-core core-pack/azalea-core
           chmod +x core-pack/azalea-core
